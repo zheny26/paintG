@@ -22,7 +22,7 @@ public class Ray extends Segment {
         Dimension dimension = Toolkit.getDefaultToolkit().getScreenSize();
         Point resultPoint = new Point();
         if (deltaX == 0 && deltaY == 0) {
-            setEnd(end);
+            super.setEnd(end);
             return;
         }
         if (Math.abs(deltaX) < Math.abs(deltaY)) {
