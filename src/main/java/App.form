@@ -117,13 +117,13 @@
                   <text value="Polygon"/>
                 </properties>
               </component>
-              <component id="2e317" class="javax.swing.JButton" binding="rhobmusButton" default-binding="true">
+              <component id="2e317" class="javax.swing.JButton" binding="rhombusButton" default-binding="true">
                 <constraints>
                   <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                   <gridbag weightx="0.0" weighty="0.0"/>
                 </constraints>
                 <properties>
-                  <text value="Rhobmus"/>
+                  <text value="Rhombus"/>
                 </properties>
               </component>
               <component id="3d654" class="javax.swing.JButton" binding="rectangleButton" default-binding="true">

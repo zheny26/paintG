@@ -7,7 +7,7 @@ import java.awt.geom.Ellipse2D;
 
 public class Ellipse extends Figure2D {
 
-    protected Point corner;
+    Point corner;
     private int width;
     private int height;
 

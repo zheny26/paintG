@@ -54,20 +54,16 @@ public class App extends JFrame {
 
     private JPanel rootPanel, drawPanel;
     private JButton segmentButton, rayButton, lineButton, chainButton, circleButton, ellipseButton, polygonButton,
-            rhobmusButton, rectangleButton;
-    private JButton rightPolygonButton;
-    private JButton fillColorButton;
-    private JButton borderColorButton;
-    private JButton moveButton;
+            rhombusButton, rectangleButton, rightPolygonButton, fillColorButton, borderColorButton, moveButton;
     private IntInputDialog rightPolygonInput;
     private DrawAction drawAction = DrawAction.MOVEMENT;
-    private DrawAction previousAction = MOVEMENT;
-    private Map<DrawAction, Consumer<MouseEvent>> drawModeActionImpl;
-    private Map<DrawAction, Consumer<MouseEvent>> shapeCreationActions;
+    private DrawAction previousDrawAction = MOVEMENT;
+    private Map<DrawAction, Consumer<MouseEvent>> drawActionImpl;
+    private Map<DrawAction, Consumer<MouseEvent>> creationActions;
     private Color borderColor = new Color(0, 0, 0);
     private Color fillColor = new Color(255, 120, 120);
     private List<Shape> shapes = new ArrayList<>();
-    private boolean isDrag;
+    private boolean isDragging;
 
     private App() {
 
@@ -99,7 +95,7 @@ public class App extends JFrame {
         circleButton.addChangeListener(e -> drawAction = CIRCLE);
         ellipseButton.addActionListener(e -> drawAction = ELLIPSE);
         polygonButton.addActionListener(e -> drawAction = POLYGON);
-        rhobmusButton.addActionListener(e -> drawAction = RHOMBUS);
+        rhombusButton.addActionListener(e -> drawAction = RHOMBUS);
         rectangleButton.addActionListener(e -> drawAction = RECTANGLE);
         rightPolygonButton.addActionListener(e -> {
             drawAction = RIGHT_POLYGON;
@@ -114,114 +110,114 @@ public class App extends JFrame {
 
     private void initDrawModeActions() {
 
-        drawModeActionImpl = new HashMap<>();
-        drawModeActionImpl.put(MOVEMENT, e -> {
-            if (isDrag) {
+        drawActionImpl = new HashMap<>();
+        drawActionImpl.put(MOVEMENT, e -> {
+            if (isDragging) {
                 getCurrentShape().move(e.getPoint());
             }
         });
-        drawModeActionImpl.put(LINE, e -> {
+        drawActionImpl.put(LINE, e -> {
             Line line = (Line) App.this.getCurrentShape();
             line.setEnd(e.getPoint());
         });
-        drawModeActionImpl.put(SEGMENT, e -> {
+        drawActionImpl.put(SEGMENT, e -> {
 
             Segment segment = (Segment) getCurrentShape();
             segment.setEnd(e.getPoint());
         });
-        drawModeActionImpl.put(RAY, e -> {
+        drawActionImpl.put(RAY, e -> {
 
             Ray ray = (Ray) getCurrentShape();
             ray.setEnd(e.getPoint());
         });
-        drawModeActionImpl.put(CHAIN, e -> {
+        drawActionImpl.put(CHAIN, e -> {
 
             Chain chain = (Chain) getCurrentShape();
             chain.getLastSegment().setEnd(e.getPoint());
-            previousAction = CHAIN;
+            previousDrawAction = CHAIN;
             drawAction = CHAIN_UPDATE;
         });
-        drawModeActionImpl.put(CHAIN_UPDATE, e -> {
+        drawActionImpl.put(CHAIN_UPDATE, e -> {
 
             Chain chain = (Chain) getCurrentShape();
             chain.getLastSegment().setEnd(e.getPoint());
         });
-        drawModeActionImpl.put(CIRCLE, e -> {
+        drawActionImpl.put(CIRCLE, e -> {
 
             Circle circle = (Circle) getCurrentShape();
             circle.setCorner(e.getPoint());
         });
-        drawModeActionImpl.put(ELLIPSE, e -> {
+        drawActionImpl.put(ELLIPSE, e -> {
 
             Ellipse ellipse = (Ellipse) getCurrentShape();
             ellipse.setCorner(e.getPoint());
         });
-        drawModeActionImpl.put(POLYGON, e -> {
+        drawActionImpl.put(POLYGON, e -> {
 
             Polygon polygon = (Polygon) getCurrentShape();
             polygon.setLastPoint(e.getPoint());
-            previousAction = POLYGON;
+            previousDrawAction = POLYGON;
             drawAction = POLYGON_UPDATE;
         });
-        drawModeActionImpl.put(POLYGON_UPDATE, e -> {
+        drawActionImpl.put(POLYGON_UPDATE, e -> {
 
             Polygon polygon = (Polygon) getCurrentShape();
             polygon.setLastPoint(e.getPoint());
         });
-        drawModeActionImpl.put(RHOMBUS, e -> {
+        drawActionImpl.put(RHOMBUS, e -> {
             Rhombus rhombus = (Rhombus) getCurrentShape();
             rhombus.setCorner(e.getPoint());
         });
-        drawModeActionImpl.put(RECTANGLE, e -> {
+        drawActionImpl.put(RECTANGLE, e -> {
 
             Rectangle rectangle = (Rectangle) getCurrentShape();
             rectangle.setCorner(e.getPoint());
         });
-        drawModeActionImpl.put(RIGHT_POLYGON, e -> {
+        drawActionImpl.put(RIGHT_POLYGON, e -> {
 
             RightPolygon rightPolygon = (RightPolygon) getCurrentShape();
             rightPolygon.setCorner(e.getPoint());
         });
 
-        shapeCreationActions = new HashMap<>();
-        shapeCreationActions.put(LINE, e -> shapes.add(new Line(borderColor, e.getPoint(), e.getPoint())));
-        shapeCreationActions.put(SEGMENT, e -> shapes.add(new Segment(borderColor, e.getPoint(), e.getPoint())));
-        shapeCreationActions.put(RAY, e -> shapes.add(new Ray(borderColor, e.getPoint(), e.getPoint())));
-        shapeCreationActions.put(CHAIN, e -> {
+        creationActions = new HashMap<>();
+        creationActions.put(LINE, e -> shapes.add(new Line(borderColor, e.getPoint(), e.getPoint())));
+        creationActions.put(SEGMENT, e -> shapes.add(new Segment(borderColor, e.getPoint(), e.getPoint())));
+        creationActions.put(RAY, e -> shapes.add(new Ray(borderColor, e.getPoint(), e.getPoint())));
+        creationActions.put(CHAIN, e -> {
             List<Segment> segments = new ArrayList<>();
             segments.add(new Segment(borderColor, e.getPoint(), e.getPoint()));
             shapes.add(new Chain(borderColor, e.getPoint(), segments));
         });
-        shapeCreationActions.put(CHAIN_UPDATE, e -> {
+        creationActions.put(CHAIN_UPDATE, e -> {
             Chain chain = (Chain) getCurrentShape();
             chain.addSegment(new Segment(borderColor, chain.getLastSegment().getEnd(), e.getPoint()));
         });
-        shapeCreationActions.put(CIRCLE,
+        creationActions.put(CIRCLE,
                 e -> shapes.add(new Circle(borderColor, e.getPoint(), fillColor, e.getPoint())));
-        shapeCreationActions.put(ELLIPSE,
+        creationActions.put(ELLIPSE,
                 e -> shapes.add(new Ellipse(borderColor, e.getPoint(), fillColor, e.getPoint())));
-        shapeCreationActions.put(POLYGON, e -> {
+        creationActions.put(POLYGON, e -> {
             List<Point> points = new ArrayList<>();
             points.add(e.getPoint());
             points.add(e.getPoint());
             shapes.add(new Polygon(borderColor, e.getPoint(), fillColor, points));
         });
-        shapeCreationActions.put(POLYGON_UPDATE, e -> {
+        creationActions.put(POLYGON_UPDATE, e -> {
 
             Polygon polygon = (Polygon) getCurrentShape();
             polygon.addPoint(e.getPoint());
         });
-        shapeCreationActions.put(RHOMBUS,
+        creationActions.put(RHOMBUS,
                 e -> shapes.add(new Rhombus(borderColor, e.getPoint(), e.getPoint(), fillColor)));
-        shapeCreationActions.put(RECTANGLE,
+        creationActions.put(RECTANGLE,
                 e -> shapes.add(new Rectangle(borderColor, e.getPoint(), e.getPoint(), fillColor)));
-        shapeCreationActions.put(RIGHT_POLYGON,
+        creationActions.put(RIGHT_POLYGON,
                 e -> shapes.add(new RightPolygon(borderColor, e.getPoint(), e.getPoint(), fillColor,
                         rightPolygonInput.getValue())));
-        shapeCreationActions.put(MOVEMENT, e -> {
+        creationActions.put(MOVEMENT, e -> {
             for (Shape shape : shapes) {
                 if (shape.contains(e.getPoint())) {
-                    isDrag = true;
+                    isDragging = true;
                     shapes.remove(shape);
                     shapes.add(shape);
                     break;
@@ -250,9 +246,9 @@ public class App extends JFrame {
             public void mousePressed(MouseEvent e) {
 
                 if (SwingUtilities.isRightMouseButton(e)) {
-                    drawAction = previousAction;
+                    drawAction = previousDrawAction;
                 } else if (SwingUtilities.isLeftMouseButton(e)) {
-                    shapeCreationActions.get(drawAction).accept(e);
+                    creationActions.get(drawAction).accept(e);
                     repaint();
                 }
             }
@@ -261,7 +257,7 @@ public class App extends JFrame {
             public void mouseReleased(MouseEvent e) {
 
                 if (drawAction == MOVEMENT) {
-                    isDrag = false;
+                    isDragging = false;
                 }
             }
         };
@@ -274,7 +270,7 @@ public class App extends JFrame {
             public void mouseDragged(MouseEvent e) {
 
                 if (SwingUtilities.isLeftMouseButton(e)) {
-                    drawModeActionImpl.get(drawAction).accept(e);
+                    drawActionImpl.get(drawAction).accept(e);
                     repaint();
                 }
             }
