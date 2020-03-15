@@ -9,7 +9,9 @@ import static entity.DrawAction.POLYGON_UPDATE;
 import static entity.DrawAction.RAY;
 import static entity.DrawAction.RECTANGLE;
 import static entity.DrawAction.RHOMBUS;
+import static entity.DrawAction.RIGHT_POLYGON;
 import static entity.DrawAction.SEGMENT;
+import static javax.swing.JOptionPane.showMessageDialog;
 
 import java.awt.Color;
 import java.awt.Cursor;
@@ -28,11 +30,13 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import javax.swing.JButton;
+import javax.swing.JColorChooser;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
+import component.IntInputDialog;
 import entity.Chain;
 import entity.Circle;
 import entity.DrawAction;
@@ -42,6 +46,7 @@ import entity.Polygon;
 import entity.Ray;
 import entity.Rectangle;
 import entity.Rhombus;
+import entity.RightPolygon;
 import entity.Segment;
 import entity.Shape;
 
@@ -50,6 +55,11 @@ public class App extends JFrame {
     private JPanel rootPanel, drawPanel;
     private JButton segmentButton, rayButton, lineButton, chainButton, circleButton, ellipseButton, polygonButton,
             rhobmusButton, rectangleButton;
+    private JButton rightPolygonButton;
+    private JButton fillColorButton;
+    private JButton borderColorButton;
+    private JButton moveButton;
+    private IntInputDialog rightPolygonInput;
     private DrawAction drawAction = DrawAction.MOVEMENT;
     private DrawAction previousAction = MOVEMENT;
     private Map<DrawAction, Consumer<MouseEvent>> drawModeActionImpl;
@@ -57,15 +67,20 @@ public class App extends JFrame {
     private Color borderColor = new Color(0, 0, 0);
     private Color fillColor = new Color(255, 120, 120);
     private List<Shape> shapes = new ArrayList<>();
+    private boolean isDrag;
 
     private App() {
 
         initComponents();
         initDrawModeActions();
+        rightPolygonInput = new IntInputDialog(this);
         setContentPane(rootPanel);
         setSize(1000, 700);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setVisible(true);
+        showMessageDialog(null, "Hello.\n 1. To add new point in polygon or chain just click. "
+                + "\n 2. To stop drawing chain or polygon press right mouse button.");
+
     }
 
     public static void main(String[] args) {
@@ -77,7 +92,6 @@ public class App extends JFrame {
 
         drawPanel.addMouseListener(getMouseAdapter());
         drawPanel.addMouseMotionListener(getMouseMotionListener());
-
         segmentButton.addActionListener(e -> drawAction = DrawAction.SEGMENT);
         rayButton.addActionListener(e -> drawAction = DrawAction.RAY);
         lineButton.addActionListener(e -> drawAction = LINE);
@@ -87,11 +101,25 @@ public class App extends JFrame {
         polygonButton.addActionListener(e -> drawAction = POLYGON);
         rhobmusButton.addActionListener(e -> drawAction = RHOMBUS);
         rectangleButton.addActionListener(e -> drawAction = RECTANGLE);
+        rightPolygonButton.addActionListener(e -> {
+            drawAction = RIGHT_POLYGON;
+            rightPolygonInput.setVisible(true);
+        });
+        fillColorButton.addActionListener(e -> fillColor = JColorChooser.showDialog(this,
+                "Choose fill color", Color.white));
+        borderColorButton.addActionListener(e -> borderColor = JColorChooser.showDialog(this,
+                "Choose border color", Color.BLACK));
+        moveButton.addActionListener(e -> drawAction = MOVEMENT);
     }
 
     private void initDrawModeActions() {
 
         drawModeActionImpl = new HashMap<>();
+        drawModeActionImpl.put(MOVEMENT, e -> {
+            if (isDrag) {
+                getCurrentShape().move(e.getPoint());
+            }
+        });
         drawModeActionImpl.put(LINE, e -> {
             Line line = (Line) App.this.getCurrentShape();
             line.setEnd(e.getPoint());
@@ -149,6 +177,11 @@ public class App extends JFrame {
             Rectangle rectangle = (Rectangle) getCurrentShape();
             rectangle.setCorner(e.getPoint());
         });
+        drawModeActionImpl.put(RIGHT_POLYGON, e -> {
+
+            RightPolygon rightPolygon = (RightPolygon) getCurrentShape();
+            rightPolygon.setCorner(e.getPoint());
+        });
 
         shapeCreationActions = new HashMap<>();
         shapeCreationActions.put(LINE, e -> shapes.add(new Line(borderColor, e.getPoint(), e.getPoint())));
@@ -182,6 +215,19 @@ public class App extends JFrame {
                 e -> shapes.add(new Rhombus(borderColor, e.getPoint(), e.getPoint(), fillColor)));
         shapeCreationActions.put(RECTANGLE,
                 e -> shapes.add(new Rectangle(borderColor, e.getPoint(), e.getPoint(), fillColor)));
+        shapeCreationActions.put(RIGHT_POLYGON,
+                e -> shapes.add(new RightPolygon(borderColor, e.getPoint(), e.getPoint(), fillColor,
+                        rightPolygonInput.getValue())));
+        shapeCreationActions.put(MOVEMENT, e -> {
+            for (Shape shape : shapes) {
+                if (shape.contains(e.getPoint())) {
+                    isDrag = true;
+                    shapes.remove(shape);
+                    shapes.add(shape);
+                    break;
+                }
+            }
+        });
     }
 
     private MouseListener getMouseAdapter() {
@@ -208,6 +254,14 @@ public class App extends JFrame {
                 } else if (SwingUtilities.isLeftMouseButton(e)) {
                     shapeCreationActions.get(drawAction).accept(e);
                     repaint();
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+
+                if (drawAction == MOVEMENT) {
+                    isDrag = false;
                 }
             }
         };

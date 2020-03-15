@@ -6,6 +6,7 @@ import java.awt.Point;
 
 public abstract class Shape {
 
+    public static final int WIDTH = 2;
     private Color borderColor;
     private Point anchor;
 
@@ -17,7 +18,12 @@ public abstract class Shape {
 
     public abstract void draw(Graphics2D g);
 
-    public abstract void move(Point destination);
+    public void move(Point destination) {
+
+        anchor.setLocation(destination);
+    }
+
+    public boolean contains(Point point) {return false;}
 
     public void setAnchor(Point center) {
         this.anchor = center;

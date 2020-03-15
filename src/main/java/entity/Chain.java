@@ -27,6 +27,13 @@ public class Chain extends Figure1D {
     @Override
     public void move(Point destination) {
 
+        segments.forEach(segment -> segment.move(destination));
+    }
+
+    @Override
+    public boolean contains(Point point) {
+
+        return segments.stream().anyMatch(segment -> segment.contains(point));
     }
 
     public List<Segment> getSegments() {

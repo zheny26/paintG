@@ -5,10 +5,13 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 public class Polygon extends Figure2D {
 
     private List<Point> points;
+    private Function<List<Point>, int[]> getX = points -> points.stream().mapToInt(point -> (int) point.getX()).toArray();
+    private Function<List<Point>, int[]> getY = points -> points.stream().mapToInt(point -> (int) point.getY()).toArray();
 
     public Polygon(Color borderColor, Point anchor, Color fillColor,
             List<Point> points) {
@@ -21,8 +24,8 @@ public class Polygon extends Figure2D {
     public void draw(Graphics2D g) {
 
         g.setColor(getFillColor());
-        int[] xPoints = points.stream().mapToInt(point -> (int) point.getX()).toArray();
-        int[] yPoints = points.stream().mapToInt(point -> (int) point.getY()).toArray();
+        int[] xPoints = getX.apply(points);
+        int[] yPoints = getY.apply(points);
         int nPoints = points.size();
         g.fillPolygon(xPoints, yPoints, nPoints);
         g.setColor(getFillColor());
@@ -32,6 +35,17 @@ public class Polygon extends Figure2D {
     @Override
     public void move(Point destination) {
 
+        Point anchor = getAnchor();
+        int deltaX = destination.x - anchor.x;
+        int deltaY = destination.y - anchor.y;
+        points.forEach(point -> point.translate(deltaX, deltaY));
+        super.move(destination);
+    }
+
+    @Override
+    public boolean contains(Point point) {
+
+        return new java.awt.Polygon(getX.apply(points), getY.apply(points), points.size()).contains(point);
     }
 
     public List<Point> getPoints() {

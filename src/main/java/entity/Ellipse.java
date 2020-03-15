@@ -3,6 +3,7 @@ package entity;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.geom.Ellipse2D;
 
 public class Ellipse extends Figure2D {
 
@@ -27,7 +28,14 @@ public class Ellipse extends Figure2D {
 
     @Override
     public void move(Point destination) {
+        corner.translate(destination.x - getAnchor().x, destination.y - getAnchor().y);
+        super.move(destination);
+    }
 
+    @Override
+    public boolean contains(Point point) {
+
+        return new Ellipse2D.Double(corner.x, corner.y, width, height).contains(point);
     }
 
     public int getWidth() {
